@@ -33,6 +33,7 @@ spec:
       containers:
         - image: kerolosayman308/voting-app-env:examplevotingapp_vote
           name: vote
+          imagePullPolicy: Always
           command:
             - sh
             - "-c"
