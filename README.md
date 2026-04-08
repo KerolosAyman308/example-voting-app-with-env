@@ -1,3 +1,12 @@
+> [!WARNING]
+> This is clone from project https://github.com/dockersamples/example-voting-app.git
+> - I moved the code from hardcoded env to env vars
+> - Added my implementation of k8s at k8s-deployment
+> - Edited github actions
+> - Renamed the repo to example-voting-app-with-env
+> All copyrights belongs to the maintainers of dockersamples/example-voting-app
+> You can find License and MAINTAINERS file still intact at the project
+
 # Example Voting App
 
 A simple distributed application running across multiple Docker containers.
