@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: db
+  name: db
+spec:
+  volumeClaimTemplates:
+    - metadata:
+        name: db-pvc
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: 50Mi
+  serviceName: db-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - image: postgres:18.3-alpine3.23
+          name: postgres
+          volumeMounts:
+            - name: db-pvc
+              mountPath: /var/lib/postgresql/data
+          envFrom:
+            - secretRef:
+                name: db-secret
+          readinessProbe:
+            exec:
+              command:
+                - /healthchecks/postgres.sh
+            failureThreshold: 5
+            periodSeconds: 5
+            initialDelaySeconds: 2
+          ports:
+            - name: PGPort
+              containerPort: 5432
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 0.1m
+              requests: 100Mi
