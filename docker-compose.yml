@@ -7,7 +7,7 @@ services:
     image: kerolosayman308/voting-app-env:examplevotingapp_vote
     build: 
       context: ./vote
-      target: dev
+      target: final
     depends_on:
       redis:
         condition: service_healthy

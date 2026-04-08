@@ -2,13 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: worker
-  name: worker
+    app: result
+  name: result
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: worker
+      app: result
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       labels:
-        app: worker
+        app: result
     spec:
       initContainers:
         - name: init-databases
@@ -26,22 +26,21 @@ spec:
             - sh
             - "-c"
             - |
-              until nc -z redis-0.redis-service 6379; do
-                sleep 2;
-              done;
-              echo "Redis is up"
               until nc -z db-0.db-service 5432; do
                 sleep 2;
               done;
               echo "Database is up"
       containers:
-        - image: kerolosayman308/voting-app-env:examplevotingapp_worker
-          name: worker
-          envFrom:
-            - secretRef:
-                name: apps-cache-secret
-            - secretRef:
-                name: apps-db-secret
+        - image: kerolosayman308/voting-app-env:examplevotingapp_result
+          name: result
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  key: DB_URL_NODE_JS
+                  name: apps-db-secret
           resources:
             requests:
               cpu: "0.5"

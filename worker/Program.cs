@@ -26,7 +26,7 @@ namespace Worker
                 string? cacheEnv = Environment.GetEnvironmentVariable("CACHE_URL");
                 if (String.IsNullOrEmpty(cacheEnv))
                 {
-                    dbEnv = "redis";
+                    cacheEnv = "redis";
                 }
                 var redisConn = OpenRedisConnection(cacheEnv);
                 var redis = redisConn.GetDatabase();

@@ -24,12 +24,23 @@ spec:
       labels:
         app: db
     spec:
+      volumes:
+        - name: health-cm
+          configMap:
+            name: postgres-health-cm
+            defaultMode: 0777
       containers:
         - image: postgres:18.3-alpine3.23
           name: postgres
           volumeMounts:
             - name: db-pvc
               mountPath: /var/lib/postgresql/data
+            - name: health-cm
+              mountPath: /healthchecks/postgres.sh
+              subPath: postgres.sh
+          env:
+            - name: POSTGRES_DB
+              value: postgres
           envFrom:
             - secretRef:
                 name: db-secret
@@ -41,10 +52,10 @@ spec:
             periodSeconds: 5
             initialDelaySeconds: 2
           ports:
-            - name: PGPort
+            - name: pg-port
               containerPort: 5432
               protocol: TCP
           resources:
             requests:
-              cpu: 0.1m
-              requests: 100Mi
+              cpu: "0.1"
+              memory: 100Mi

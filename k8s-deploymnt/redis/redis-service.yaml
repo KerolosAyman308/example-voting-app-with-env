@@ -8,5 +8,5 @@ spec:
   selector:
     app: redis
   ports:
-    - port: 5432
-      name: redisPort
+    - port: 6379
+      name: redis-port

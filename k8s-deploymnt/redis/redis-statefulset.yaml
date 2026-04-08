@@ -15,9 +15,19 @@ spec:
       labels:
         app: redis
     spec:
+      volumes:
+        - name: health-cm
+          configMap:
+            name: redis-health-cm
+            defaultMode: 0777
       containers:
         - image: redis:alpine
           name: redis
+          volumeMounts:
+            - name: health-cm
+              mountPath: /healthchecks/redis.sh
+              subPath: redis.sh
+
           readinessProbe:
             exec:
               command:
@@ -26,10 +36,10 @@ spec:
             periodSeconds: 5
             initialDelaySeconds: 2
           ports:
-            - name: redisPort
+            - name: redis-port
               containerPort: 6379
               protocol: TCP
           resources:
             requests:
-              cpu: 0.1m
-              requests: 100Mi
+              cpu: "0.1"
+              memory: 100Mi

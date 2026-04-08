@@ -9,4 +9,4 @@ spec:
     app: db
   ports:
     - port: 5432
-      name: pgport
+      name: pg-port
