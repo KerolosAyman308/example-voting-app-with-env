@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: result
+  name: result
+spec:
+  replicas: {{ .Values.result.pod.replicaCount | default 2 }}
+  selector:
+    matchLabels:
+      app: result
+  strategy:  
+  {{- if .Values.result.pod.strategy }}
+    {{- toYaml .Values.result.pod.strategy | nindent 4 }}
+  {{- else }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: result
+    spec:
+      initContainers:
+        - name: init-results
+          image: busybox
+          command:
+            - sh
+            - "-c"
+            - |
+              until nc -z db-0.db-service 5432; do
+                sleep 2;
+              done;
+              echo "result is up"
+      containers:
+        - image: {{ .Values.result.pod.image |  default "kerolosayman308/voting-app-env:examplevotingapp_result" }} 
+          name: result
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_URL
+              {{- if .Values.result.pod.env.databaseUrl.value }}
+              value: {{ .Values.result.pod.env.databaseUrl.value | quote }}
+
+              {{- else if .Values.result.pod.env.databaseUrl.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.result.pod.env.databaseUrl.valueFrom | nindent 16 }}
+              {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: apps-db-secret
+                  key: DB_URL_NODE_JS
+              {{- end }}
+
+            {{- if .Values.result.pod.env.extraEnv }}
+            {{- toYaml .Values.result.pod.env.extraEnv | nindent 12 }}
+            {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.result.pod.requests.cpu | default "100m" }}
+              memory: {{ .Values.result.pod.requests.memory | default "100Mi" }}
+            {{- if .Values.result.pod.limits.enabled }}
+            limits:
+              cpu: {{ .Values.result.pod.limits.cpu }}
+              memory: {{ .Values.result.pod.limits.memory }}
+            {{- end }}

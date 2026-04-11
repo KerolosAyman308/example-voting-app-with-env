@@ -1,0 +1,144 @@
+ingress:
+  votePath: vote
+  resultPath: result
+database:
+  pod:
+    storage: {}
+    #   className:
+    #   requests: 50Mi
+    # version: :18.3-alpine3.23
+    # databaseName: postgres
+    requests: {}
+      # cpu: 100m
+      # memory: 100Mi
+    limits:
+      enabled: false
+      # cpu: 100m
+      # memory: 100Mi
+    secret:
+      custom: {}
+        # name: db-secret
+  healthcheck:
+    enabled: true
+    customcm:
+      enabled: false
+      # type: file ## can be "file" so cam provide logic bash  in cm or "custom" for custom config
+      # failureThreshold: 5
+      # periodSeconds: 5
+      # initialDelaySeconds: 2
+      # cmSubPathName: postgres.sh
+      custom:
+        # exec: ## or whatever you want
+        #   - command: your command
+      # name:
+cache:
+  pod:
+    # version: :alpine
+    requests: {}
+      # cpu: 100m
+      # memory: 100Mi
+    limits:
+      enabled: false
+      # cpu: 100m
+      # memory: 100Mi
+  healthcheck:
+    enabled: true
+    customcm:
+      enabled: false
+      # type: file ## can be "file" so cam provide logic bash  in cm or "custom" for custom config
+      # failureThreshold: 5
+      # periodSeconds: 5
+      # initialDelaySeconds: 2
+      # cmSubPathName: redis.sh
+      custom:
+      #   exec: ## or whatever you want
+      #     - command: your command
+      # name:
+result:
+  pod:
+    env:
+      databaseUrl: {}
+      #   value: "dbURL"
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: apps-db-secret
+      #       key: DB_URL_NODE_JS
+      extraEnv: []
+    strategy: {}
+    #   type: RollingUpdate
+    #   rollingUpdate:
+    #     maxSurge: 1
+    #     maxUnavailable: 1
+    # image: kerolosayman308/voting-app-env:examplevotingapp_result
+    # replicaCount: 2
+
+    requests: {}
+      # cpu: 100m
+      # memory: 100Mi
+    limits:
+      enabled: false
+      # cpu: 100m
+      # memory: 100Mi
+vote:
+  pod:
+    # replicas: 2
+    # image: "kerolosayman308/voting-app-env:examplevotingapp_vote"
+    # imagePullPolicy: IfNotPresent
+
+    strategy: {}
+      # type: RollingUpdate
+      # rollingUpdate:
+      #   maxSurge: 1
+      #   maxUnavailable: 1
+    env:
+      cacheUrl: {}
+        # value: "cacheUrl"
+        # valueFrom:
+        #   secretKeyRef:
+        #     name: apps-cache-secret
+        #     key: CACHE_URL
+      extraEnv: []
+
+    requests: {}
+      # cpu: "0.5"
+      # memory: "100Mi"
+
+    limits:
+      enabled: false
+      # cpu: "1.0"
+      # memory: "200Mi"
+worker:
+  pod:
+    # replicaCount: 2
+    # image: "kerolosayman308/voting-app-env:examplevotingapp_worker"
+    # imagePullPolicy: IfNotPresent
+
+    strategy: {}
+      # type: RollingUpdate
+      # rollingUpdate:
+      #   maxSurge: 1
+      #   maxUnavailable: 1
+
+    env:
+      databaseUrl: {}
+      #   value: "dbURL"
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: apps-db-secret
+      #       key: DB_URL
+      cacheUrl: {}
+      #   value: "cacheUrl"
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: apps-cache-secret
+      #       key: CACHE_URL
+      extraEnv: []
+
+    requests: {}
+      # cpu: "0.5"
+      # memory: "100Mi"
+
+    limits:
+      enabled: false
+      # cpu: "1.0"
+      # memory: "200Mi"

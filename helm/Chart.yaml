@@ -1,0 +1,6 @@
+apiVersion: v2
+name: voting-app-env
+description: docker voting app with env support, working with Traefik Ingress controller
+type: application
+version: 0.0.1
+appVersion: "1.0.0"

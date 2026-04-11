@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: db
+  name: db
+spec:
+  volumeClaimTemplates:
+    - metadata:
+        name: db-pvc
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.database.pod.storage.className | default "local-path"}} 
+        resources:
+          requests:
+            storage: {{ .Values.database.pod.storage.requests | default "50Mi"}}
+  serviceName: db-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+    {{- if .Values.database.healthcheck.enabled  }}
+      volumes:
+        - name: health-cm
+          configMap:
+          {{- if not .Values.database.healthcheck.customcm.enabled  }}
+            name: postgres-health-cm
+          {{- else -}}
+            name: {{ .Values.database.healthcheck.customcm.name }}
+          {{- end }}
+            defaultMode: 0777
+    {{- end }}
+      containers:
+        - image: postgres{{ .Values.database.pod.version | default ":18.3-alpine3.23" }}
+          name: postgres
+          volumeMounts:
+            - name: db-pvc
+              mountPath: /var/lib/postgresql/data
+          {{- if .Values.database.healthcheck.enabled  }}
+            - name: health-cm
+              mountPath: /healthchecks/postgres.sh
+              subPath: {{ .Values.database.healthcheck.customcm.cmSubPathName | default "postgres.sh"  }}
+          {{- end }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.database.pod.databaseName | default "postgres" }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.database.pod.secret.custom.name | default "db-secret" }}
+          {{- if .Values.database.healthcheck.enabled  }}
+          readinessProbe:
+            {{- if eq .Values.database.healthcheck.customcm.type "custom" }}
+            {{- toYaml .Values.database.healthcheck.customcm.custom | nindent 6 }}
+            {{- else }}
+            exec:
+              command:
+                - /healthchecks/postgres.sh
+            {{- end }}
+            failureThreshold: {{ .Values.database.healthcheck.customcm.failureThreshold | default 5 }}
+            periodSeconds: {{ .Values.database.healthcheck.customcm.periodSeconds | default 2 }}
+            initialDelaySeconds: {{ .Values.database.healthcheck.customcm.initialDelaySeconds | default 5  }}
+          {{- end }}
+          ports:
+            - name: pg-port
+              containerPort: 5432
+              protocol: TCP
+          resources:
+            requests:
+              cpu: {{ .Values.database.pod.requests.cpu | default "100m" }}
+              memory: {{ .Values.database.pod.requests.memory | default "100Mi" }}
+            {{- if .Values.database.pod.limits.enabled }}
+            limits:
+              cpu: {{ .Values.database.pod.limits.cpu }}
+              memory: {{ .Values.database.pod.limits.memory }}
+            {{- end }}

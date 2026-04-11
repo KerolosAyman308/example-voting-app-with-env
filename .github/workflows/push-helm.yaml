@@ -1,0 +1,42 @@
+name: Build Result
+# template source: https://github.com/dockersamples/.github/blob/main/templates/call-docker-build.yaml
+
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - "main"
+    paths:
+      - "helm/**"
+      - ".github/workflows/push-helm.yaml"
+  pull_request:
+    branches:
+      - "main"
+    paths:
+      - "helm/**"
+      - ".github/workflows/push-helm.yaml"
+
+jobs:
+  helm-push:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout repo
+
+      - name: Upload helm to docker
+        id: helm_upload
+        run: |
+          helm lint ./helm
+          echo "${{ secrets.DOCKER_PASSWORD }}" | helm registry login registry-1.docker.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+          HELMFILE=$(helm package ./helm | awk '{print $NF}')
+          helm push ./$HELMFILE oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}
+
+          echo "ARTIFACT_PATH=$HELMFILE" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_NAME=$(basename $HELMFILE)" >> $GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.helm_upload.outputs.ARTIFACT_NAME }}
+          path: ${{ steps.helm_upload.outputs.ARTIFACT_PATH }}
+          if-no-files-found: error 

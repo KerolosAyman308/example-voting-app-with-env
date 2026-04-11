@@ -1,0 +1,89 @@
+{{- with .Values.worker }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: worker
+  name: worker
+spec:
+  replicas: {{ .pod.replicaCount | default 2 }}
+  selector:
+    matchLabels:
+      app: worker
+  strategy:
+  {{- if .pod.strategy }}
+    {{- toYaml .pod.strategy | nindent 4 }}
+  {{- else }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      initContainers:
+        - name: init-databases
+          image: busybox
+          command:
+            - sh
+            - "-c"
+            - |
+              until nc -z redis-0.redis-service 6379; do
+                sleep 2;
+              done;
+              echo "Redis is up"
+              until nc -z db-0.db-service 5432; do
+                sleep 2;
+              done;
+              echo "Database is up"
+      containers:
+        - name: worker
+          image: {{ .pod.image | default "kerolosayman308/voting-app-env:examplevotingapp_worker" }}
+          imagePullPolicy: {{ .pod.imagePullPolicy | default "IfNotPresent" }}
+
+          env:
+            - name: DB_URL
+              {{- if .pod.env.databaseUrl.value }}
+              value: {{ .pod.env.databaseUrl.value | quote }}
+
+              {{- else if .pod.env.databaseUrl.valueFrom }}
+              valueFrom:
+                {{- toYaml .pod.env.databaseUrl.valueFrom | nindent 16 }}
+              {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: apps-db-secret
+                  key: DB_URL
+              {{- end }}
+
+            - name: CACHE_URL
+              {{- if .pod.env.cacheUrl.value }}
+              value: {{ .pod.env.cacheUrl.value | quote }}
+
+              {{- else if .pod.env.cacheUrl.valueFrom }}
+              valueFrom:
+                {{- toYaml .pod.env.cacheUrl.valueFrom | nindent 16 }}
+              {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: apps-cache-secret
+                  key: CACHE_URL
+              {{- end }}
+
+            {{- if .pod.env.extraEnv }}
+            {{- toYaml .pod.env.extraEnv | nindent 12 }}
+            {{- end }}
+          
+          resources:
+            requests:
+              cpu: {{ .pod.requests.cpu | default "100m" }}
+              memory: {{ .pod.requests.memory | default "100Mi" }}
+            {{- if .pod.limits.enabled }}
+            limits:
+              cpu: {{ .pod.limits.cpu }}
+              memory: {{ .pod.limits.memory }}
+            {{- end }}
+{{- end }}

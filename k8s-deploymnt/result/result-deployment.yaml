@@ -43,5 +43,5 @@ spec:
                   name: apps-db-secret
           resources:
             requests:
-              cpu: "0.5"
+              cpu: "100m"
               memory: 100Mi

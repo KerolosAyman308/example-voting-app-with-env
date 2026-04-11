@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: redis
+  name: redis
+spec:
+  serviceName: redis-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      volumes:
+        - name: health-cm
+          configMap:
+          {{- if not .Values.cache.healthcheck.customcm.enabled  }}
+            name: redis-health-cm
+          {{- else -}}
+            name: {{ .Values.cache.healthcheck.customcm.name }}
+          {{- end }}
+            defaultMode: 0777
+      containers:
+        - image: redis{{ .Values.cache.pod.version | default ":alpine" }}
+          name: redis
+          {{- if .Values.cache.healthcheck.enabled  }}
+          volumeMounts:
+            - name: health-cm
+              mountPath: /healthchecks/redis.sh
+              subPath: {{ .Values.cache.healthcheck.customcm.cmSubPathName | default "redis.sh"  }}
+          {{- end }}
+          {{- if .Values.cache.healthcheck.enabled  }}
+          readinessProbe:
+            {{- if eq .Values.cache.healthcheck.customcm.type "custom" }}
+            {{- toYaml .Values.cache.healthcheck.customcm.custom | nindent 6 }}
+            {{- else }}
+            exec:
+              command:
+                - /healthchecks/redis.sh
+            {{- end }}
+            failureThreshold: {{ .Values.cache.healthcheck.customcm.failureThreshold | default 5  }}
+            periodSeconds: {{ .Values.cache.healthcheck.customcm.periodSeconds | default 2 }}
+            initialDelaySeconds: {{ .Values.cache.healthcheck.customcm.initialDelaySeconds | default 2  }}
+          {{- end }}
+          ports:
+            - name: redis-port
+              containerPort: 6379
+              protocol: TCP
+          resources:
+            requests:
+              cpu: {{ .Values.cache.pod.requests.cpu | default "100m" }}
+              memory: {{ .Values.cache.pod.requests.memory | default "100Mi" }}
+            {{- if .Values.cache.pod.limits.enabled }}
+            limits:
+              cpu: {{ .Values.cache.pod.limits.cpu }}
+              memory: {{ .Values.cache.pod.limits.memory }}
+            {{- end }}
