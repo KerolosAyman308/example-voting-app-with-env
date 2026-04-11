@@ -53,11 +53,11 @@ spec:
           port: 8080
           sticky:
             cookie:
-              name: voter_id
+              name: vote_sticky_session
       middlewares:
         - name: strip-voting-prefixes
 
-    - match: HeadersRegexp(`Referer`, `.*/{{ .Values.ingress.votePath | default "votes" }}.*`) && !PathPrefix(`/{{ .Values.ingress.votePath | default "votes" }}`) && !PathPrefix(`/{{ .Values.ingress.resultPath | default "result" }}`) && !PathPrefix(`/socket.io`)
+    - match: HeaderRegexp(`Referer`, `.*/{{ .Values.ingress.votePath | default "votes" }}.*`) && !PathPrefix(`/{{ .Values.ingress.votePath | default "votes" }}`) && !PathPrefix(`/{{ .Values.ingress.resultPath | default "result" }}`) && !PathPrefix(`/socket.io`)
       kind: Rule
       services:
         - name: vote-service
@@ -77,7 +77,7 @@ spec:
       middlewares:
         - name: strip-voting-prefixes
 
-    - match: HeadersRegexp(`Referer`, `.*/{{ .Values.ingress.resultPath | default "result" }}.*`) && !PathPrefix(`/{{ .Values.ingress.votePath | default "votes" }}`) && !PathPrefix(`/{{ .Values.ingress.resultPath | default "result" }}`) && !PathPrefix(`/socket.io`)
+    - match: HeaderRegexp(`Referer`, `.*/{{ .Values.ingress.resultPath | default "result" }}.*`) && !PathPrefix(`/{{ .Values.ingress.votePath | default "votes" }}`) && !PathPrefix(`/{{ .Values.ingress.resultPath | default "result" }}`) && !PathPrefix(`/socket.io`)
       kind: Rule
       services:
         - name: result-service
