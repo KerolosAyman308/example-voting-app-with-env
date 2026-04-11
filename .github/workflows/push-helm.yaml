@@ -28,10 +28,8 @@ jobs:
         run: |
           helm lint ./helm
           echo "${{ secrets.DOCKER_PASSWORD }}" | helm registry login registry-1.docker.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          helm package ./helm > out.txt
-          cat out.txt
-          HELMFILE=$(cat out.txt | awk '{print $NF}')
-          echo $HELMFILE
+          helm package ./helm --destination .
+          HELMFILE=$(ls *.tgz)
           helm push ./$HELMFILE oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}
 
           echo "ARTIFACT_PATH=$HELMFILE" >> $GITHUB_OUTPUT
