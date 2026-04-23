@@ -23,7 +23,7 @@ jobs:
   call-docker-build-push:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: Checkout repo
 
       - name: Log in to Docker Hub
